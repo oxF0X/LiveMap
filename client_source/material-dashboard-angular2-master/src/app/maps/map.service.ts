@@ -135,6 +135,19 @@ export class MapService {
             position: this.getGoogleCoordinateByCoordinate(coordinate),
             title: "Hello World!"
         });
+
+        const infowindow = new google.maps.InfoWindow({
+            content: 'Info content goes here', // This can be HTML content or plain text
+          });
+
+        marker.addListener('mouseover', () => {
+            infowindow.open(this.map, marker); // Open the info window when mouseover occurs
+        });
+          
+        marker.addListener('mouseout', () => {
+            infowindow.close(); // Close the info window when mouseout occurs
+        });
+
         marker.setMap(this.map);
     }
 
