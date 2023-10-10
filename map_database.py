@@ -11,6 +11,8 @@ import os
 from datetime import datetime
 import schedule 
 import time
+import threading
+
 
 mydb = mysql.connector.connect(
     host = "localhost",
@@ -36,6 +38,7 @@ cursor.execute(create_table_query)
 
 
 
+
 #will change when needed
 json_directory = "/path/to/json"
 
@@ -45,7 +48,7 @@ def insert_json_data(file):
     with open(os.path.join(json_directory, file), "r") as f:
         data = json.load(f)
     
-    check_query = "SELECT id FROM your_table_name WHERE id = %s"
+    check_query = "SELECT id FROM mapdata WHERE id = %s"
     cursor.execute(check_query, (data["id"],))
     existing_id = cursor.fetchone()
     if not existing_id:
@@ -64,14 +67,14 @@ def delete_old_rows():
     
     #query to delete rows older than 15 minutes
     delete_query = """
-    DELETE FROM your_table_name
+    DELETE FROM mapdata
     WHERE DATEDIFF(minute, current_time, addition) > %s AND type = %s
     """
     
     #execute cursor with changes, will add types once syntax is known
     cursor.execute(delete_query, (15, ""))
     cursor.execute(delete_query, (30, ""))
-    # Commit the changes
+    #commit the changes
     mydb.commit()
     
 
@@ -84,16 +87,23 @@ def iterator():
             insert_json_data(file)
 
 
-#schedule to do tasks every minute
-schedule.every(1).minutes.do(iterator(), delete_old_rows()) 
-  
-while True: 
-    schedule.run_pending() 
-    time.sleep(1)
 
+#multithread the main functions, idk if it's necessary 
+def main_execute():
+    
+    t1 = threading.Thread(target = iterator)
+    t2 = threading.Thread(target = delete_old_rows)
+    
+    t1.start() 
+    t2.start() 
+
+    #wait until threads finish their job 
+    t1.join() 
+    t2.join() 
 
 
 
 #commit changes and close db
 mydb.commit()
 mydb.close()
+
