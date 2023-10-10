@@ -92,14 +92,14 @@ def iterator():
 def main_execute():
     
     t1 = threading.Thread(target = iterator)
-    t2 = threading.Thread(target = delete_old_rows)
+    #t2 = threading.Thread(target = delete_old_rows)
     
     t1.start() 
-    t2.start() 
+    #t2.start() 
 
     #wait until threads finish their job 
     t1.join() 
-    t2.join() 
+    #t2.join() 
 
 
 
