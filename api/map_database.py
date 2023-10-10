@@ -56,7 +56,7 @@ class DBManager:
 
 
     #insert JSON data
-    def insert_json_data(file):
+    def insert_json_data(self, file):
         json_directory = "/path/to/json"
 
         with open(os.path.join(json_directory, file), "r") as f:
@@ -73,7 +73,7 @@ class DBManager:
         else:
             os.remove(os.path.join(json_directory, file))
                 
-        mydb.commit()
+        self.mydb.commit()
 
 
     def delete_old_rows(self):
@@ -82,12 +82,13 @@ class DBManager:
         #query to delete rows older than 15 minutes
         delete_query = """
         DELETE FROM mapdata
-        WHERE DATEDIFF(minute, current_time, addition) > %s AND type = %s
+        WHERE addition < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
         """
         
         #execute cursor with changes, will add types once syntax is known
-        self.cursor.execute(delete_query, (15, ""))
-        self.cursor.execute(delete_query, (30, ""))
+        self.cursor.execute(delete_query, ("15 MINUTE", "ALARMS"))
+        self.cursor.execute(delete_query, ("5 HOUR", "ROAD_BLOCKED"))
+        self.cursor.execute(delete_query, ("5 HOUR", "DANGER"))
         #commit the changes
         self.mydb.commit()
         
@@ -106,18 +107,18 @@ class DBManager:
     def main_execute(self):
         
         t1 = threading.Thread(target = iterator)
-        #t2 = threading.Thread(target = delete_old_rows)
+        t2 = threading.Thread(target = delete_old_rows)
         
         t1.start() 
-        #t2.start() 
+        t2.start() 
 
         #wait until threads finish their job 
         t1.join() 
-        #t2.join() 
+        t2.join() 
 
 
 
-        #commit changes and close db
-        self.mydb.commit()
-        self.mydb.close()
+    #commit changes and close db
+    self.mydb.commit()
+    self.mydb.close()
 
