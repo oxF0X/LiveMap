@@ -27,7 +27,7 @@ export class Coordinate {
     }
 }
 
-export enum EventTypeEnum {
+export enum MapEventTypeEnum {
     missile,
     Shooting
 }
@@ -39,23 +39,20 @@ export enum GeneralEventTypeEnum {
 
 export interface GeneralEvent {
     id: string;
-    content: string;
-    title?: string;
-    newsType: GeneralEventTypeEnum;
-    eventType: EventTypeEnum
-    additionDate: string;
+    description: string;
+    type: GeneralEventTypeEnum;
     coordinate: Coordinate;
 }
 
 export interface MapEvent {
     id: string;
     description: string;
-    type: EventTypeEnum;
+    type: MapEventTypeEnum;
     coordinate: Coordinate;
 }
 
 export interface TableEvent {
     id: string;
     description: string;
-    type: EventTypeEnum;
+    type: MapEventTypeEnum;
 }

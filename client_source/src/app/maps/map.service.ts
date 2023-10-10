@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable, of, switchMap, map, catchError} from 'rxjs';
-import {Coordinate, MapEvent, EventTypeEnum, Marker} from '../data/types';
+import {Coordinate, MapEvent, MapEventTypeEnum, Marker} from '../data/types';
 
 declare const google: any;
 
