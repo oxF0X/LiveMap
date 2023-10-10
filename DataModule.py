@@ -11,6 +11,16 @@ class dataMoudle:
         }
         url = "https://hamal.co.il/main"
 
+        hebrew_alphabet = [
+        'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ך', 'ל', 'מ',
+        'ם', 'נ', 'ן', 'ס', 'ע', 'פ', 'ף', 'צ', 'ץ', 'ק', 'ר', 'ש', 'ת'
+        ]
+
+        symbols = [
+        ' ', '!', '"', '#', '$' "'", '(', ')', ',', '.',
+        ':', '[', ']', '^', '`', '{', '|', '}', '~', '׳', '־', '׀', 'ׁ', 'ׂ', '׃', '׆', 'ׇ'
+        ]
+
         try:
             response = requests.get(url)
 
@@ -42,7 +52,6 @@ class dataMoudle:
 
         for link in links:
             url = f"https://hamal.co.il{link}"
-            print(url)
 
             try:
                 response = requests.get(url)
@@ -58,9 +67,13 @@ class dataMoudle:
 
 
             title = str(soup.find(attrs={"class":"styles_title__QOrfi"}).get_text())
-            content = str(soup.find(attrs={"class":"styles_action__8YDU4 styles_mail__6E83G"}))
+            content = str(soup.find(attrs={"class": "styles_action__8YDU4 styles_mail__6E83G"}))
+            parsedContent = ""
+            for letter in content:
+                if(letter in hebrew_alphabet or letter in symbols):
+                    parsedContent += letter
 
-            data[title] = content
+            data[title] = parsedContent
 
 
         return data
