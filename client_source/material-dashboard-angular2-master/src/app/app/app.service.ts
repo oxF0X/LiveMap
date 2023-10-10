@@ -1,13 +1,15 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {Observable, of, switchMap, map, catchError, BehaviorSubject, tap, throwError} from 'rxjs';
 import {GeneralEvent, MapEvent, TableEvent} from '../data/types';
 import {HttpService} from '../http/http.service';
+import {DOCUMENT} from '@angular/common';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AppService {
+    static isRtl: boolean;
     generalEvents: GeneralEvent[];
     tableEvents: TableEvent[];
     mapEvents: MapEvent[];
@@ -23,8 +25,9 @@ export class AppService {
         return this._mapEvents.asObservable();
     }
 
-    constructor(
-        private httpService: HttpService, private _httpClient: HttpClient) {
+    constructor(@Inject(DOCUMENT) private document: Document,
+                private httpService: HttpService,
+                private _httpClient: HttpClient) {
     }
 
     initApp() {
@@ -54,6 +57,21 @@ export class AppService {
                 return throwError(() => error);
             })
         ).subscribe();
+
+        this.setAppLanguage(true); ///
+    }
+
+    setAppLanguage(isRtl): void {///
+        const html = this.document.getElementsByTagName('html')[0];
+        if (isRtl) {
+            html.lang = 'he';
+            html.dir = 'rtl';
+            const body = this.document.getElementsByTagName('body')[0];
+            body.style.textAlign = 'right';
+        } else {
+            html.lang = 'en';
+        }
+        AppService.isRtl = isRtl;
     }
 
     getMapEventsByGeneralEvents(events: GeneralEvent[]): MapEvent[] { ///

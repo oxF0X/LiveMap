@@ -1,13 +1,16 @@
 <div class="logo">
-    <a href="https://www.creative-tim.com" class="simple-text">
-        <div class="logo-img">
-            <img src="/assets/img/angular2-logo-red.png"/>
-        </div>
-        Creative Tim
+<!--    <a href="https://www.creative-tim.com" class="simple-text">-->
+<!--        <div class="logo-img">-->
+<!--            <img src="/assets/img/angular2-logo-red.png"/>-->
+<!--        </div>-->
+<!--        Creative Tim-->
+<!--    </a>-->
+    <a class="simple-text">
+        ישראל מנצחת!
     </a>
 </div>
 <div class="sidebar-wrapper">
-  <div *ngIf="isMobileMenu()">
+  <div *ngIf="isMobileMenu()" style="display: none">
     <form class="navbar-form">
       <span class="bmd-form-group">
         <div class="input-group no-border">
@@ -54,12 +57,17 @@
         </li>
     </ul>
   </div>
-    <ul class="nav">
+    <ul class="nav" [style.paddingRight]="AppService.isRtl ? '0' : 'unset'">
         <li routerLinkActive="active" *ngFor="let menuItem of menuItems" class="{{menuItem.class}} nav-item">
             <a class="nav-link" [routerLink]="[menuItem.path]">
                 <i class="material-icons">{{menuItem.icon}}</i>
-                <p>{{menuItem.title}}</p>
+                <p [style.textAlign]="AppService.isRtl ? 'right' : 'unset'">{{menuItem.title}}</p>
             </a>
         </li>
     </ul>
+    <div style="width: 100%; text-align: center; position: absolute; bottom: 0">
+        <div class="copyright" style="font-size: xx-small">
+            Copyright (c) 2017 Creative Tim
+        </div>
+    </div>
 </div>

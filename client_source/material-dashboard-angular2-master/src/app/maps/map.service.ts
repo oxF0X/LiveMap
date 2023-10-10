@@ -12,7 +12,6 @@ export class MapService {
     static map: any;
     mapOptions: any = {
         zoom: 13,
-        // scrollwheel: false, //we disable de scroll over the map, it is a really annoing when you scroll through page
         scrollwheel: true,
         styles: [{
             "featureType": "water",
