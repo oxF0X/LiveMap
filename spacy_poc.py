@@ -1,29 +1,68 @@
 from deep_translator import GoogleTranslator
 import spacy
-from pprint import pprint
-nlp = spacy.load('en_core_web_sm')
+import re
 translator_en = GoogleTranslator(source='auto', target='en')  
 translator_he = GoogleTranslator(source='auto', target='iw')  
 
-def extract_places_and_descriptions(paragraph):
-    doc = nlp(paragraph)
+locations_txt = open("./locations.txt",'r')
+locations = locations_txt.read() 
+locations_list = locations.split("\n") 
+locations_txt.close()
 
-    places = []
-    descriptions = []
-    for ent in doc.ents:
-        print(f"{ent.text} : {ent.label_}")
-        if ent.label_ in ["GPE"]:  # Check if the entity is a geographical place
-            places.append(ent.text)
-            sentence = ent.sent
-            descriptions.append(sentence.text)
 
-    return places, descriptions
+
+class LocationExtractor:
+    def __init__(self, locations_list):
+        self.locations_list = locations_list
+        self.nlp = spacy.load("en_core_web_md")
+
+    def extract_place(self, message):
+        for location in self.locations_list:
+            if location.lower() in message.lower() and location != '': # Case-insensitive keyword matching
+                return location
+        place = ""
+        for token in self.nlp(message):
+            #print(f"{token.text}:{token.ent_type_}")
+            if token.text.lower() in ["highway","road","route"] or token.ent_type_ in ["FAC","LOC","PERSON","CARDINAL"]: 
+                place += token.text + " "
+        return place
+    def extract_road(self, message):
+        road = ""
+        for token in self.nlp(message):
+            if token.ent_type_ == "FAC":
+                road += token.text + " "
+        return road
+    
+    def classify_message(self, message):        
+        doc = self.nlp(message)
+        type = None
+        loc = None
+        # Check for road references
+        for token in doc:
+           if token.ent_type_ == "FAC":
+               type = "ROAD_BLOCKED"
+        danger_keywords = ["invasion", "danger", "terrorist","infiltration","fear","incident","shooting"]
+        if any(keyword in message.lower() for keyword in danger_keywords):
+            type = "DANGER"
+        if("alarms" in message.lower()):
+            type = "ALARMS"
+        tmp = self.extract_place(message) 
+        if len(tmp) > 0:
+            loc = tmp
+        tmp = self.extract_road(message)
+        if len(tmp) > 0: 
+            loc = tmp
+        classification = {
+            "place": translator_he.translate(loc)[::-1],
+            "message": translator_he.translate(message)[::-1],
+            "type": type
+        }
+        return classification
+
+location_extractor = LocationExtractor(locations_list)
 
 t = input('Enter text: ')
 
-places, descriptions = extract_places_and_descriptions(translator_en.translate(t))  
+classification = location_extractor.classify_message(translator_en.translate(t))
 
-
-for place, description in zip(places, descriptions):
-   print(f"Place: {translator_he.translate(place.strip('[]'))[::-1]}")
-   print(f"What's happening there: {translator_he.translate(description.strip('[]'))[::-1]}\n")
+print(classification)
