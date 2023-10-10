@@ -1,48 +1,45 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {MapService} from './map.service';
 import {HttpService} from '../http/http.service';
-import {catchError, map, tap, throwError} from 'rxjs';
+import {catchError, map, Observable, Subject, takeUntil, tap, throwError} from 'rxjs';
 import {HttpErrorResponse} from '@angular/common/http';
-import {MapEvent} from '../data/maps.types';
+import {MapEvent} from '../data/types';
+import {AppService} from '../app/app.service';
 
 declare const google: any;
-
-interface Marker {
-    lat: number;
-    lng: number;
-    label?: string;
-    draggable?: boolean;
-}
 
 @Component({
     selector: 'app-maps',
     templateUrl: './maps.component.html',
     styleUrls: ['./maps.component.css']
 })
-export class MapsComponent implements OnInit {
+export class MapsComponent implements OnInit, OnDestroy {
+    private _unsubscribeAll: Subject<any> = new Subject<any>();
+    mapEvents: MapEvent[];
 
     constructor(private mapService: MapService,
-                private httpService: HttpService) {
+                private _changeDetectorRef: ChangeDetectorRef,
+                private appService: AppService) {
     }
 
     ngOnInit() {
         this.mapService.initMap();
-        this.httpService.getMapEvents().pipe(
-            map((events: MapEvent[]) => {
-                return this.mapService.mapEvents = events;
-            }),
-            catchError((error: HttpErrorResponse) => {
-                // this._translocoService.selectTranslate('Test.Failed to reload the questions').pipe(take(1)).subscribe((translation) => {
-                //     this._handleTestErrors(translation);
-                // });
-                return throwError(() => error);
-            })
-        ).subscribe((events: MapEvent[]) => {
-            events?.forEach((event: MapEvent) => {
-                this.mapService.addMarker(event.coordinate);
+        this.appService.mapEvents$
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe((mapEvents: MapEvent[]) => {
+                this.mapEvents = mapEvents;
+                // Todo: Check for multiplication
+                this.mapEvents.forEach((event: MapEvent) => {
+                    this.mapService.addEventMarker(event);
+                });
+                this._changeDetectorRef.markForCheck();
             });
-        });
 
     }
 
+    ngOnDestroy(): void {
+        // Unsubscribe from all subscriptions
+        this._unsubscribeAll.next(null);
+        this._unsubscribeAll.complete();
+    }
 }

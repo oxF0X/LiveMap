@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable, of, switchMap, map, catchError} from 'rxjs';
-import {Coordinate, MapEvent} from '../data/maps.types';
+import {Coordinate, MapEvent, MapEventTypeEnum, Marker} from '../data/types';
 
 declare const google: any;
 
@@ -9,8 +9,7 @@ declare const google: any;
     providedIn: 'root'
 })
 export class MapService {
-    initMapCenter: Coordinate;
-    map: any;
+    static map: any;
     mapOptions: any = {
         zoom: 13,
         // scrollwheel: false, //we disable de scroll over the map, it is a really annoing when you scroll through page
@@ -108,45 +107,51 @@ export class MapService {
     }
 
     initMap() {
-        // this.initMapCenter = new Coordinate(31.528748, 34.596346)
-        // this.mapOptions.center = new google.maps.LatLng(this.initMapCenter.lat, this.initMapCenter.lng);
-        this.map = new google.maps.Map(document.getElementById("map"), this.mapOptions);
-        this.fitMap([
-            new Coordinate(31.540895, 34.580934),
-            new Coordinate(31.538774, 34.586770),
-            new Coordinate(31.538408, 34.604065),
-            new Coordinate(31.524103, 34.614838),
-            new Coordinate(31.512242, 34.602926),
-            new Coordinate(31.516273, 34.588195),
-            new Coordinate(31.528986, 34.579738)
-        ])
-    }
+        MapService.map = new google.maps.Map(document.getElementById('map'), this.mapOptions);
 
-    addPolygon(coordinates: Coordinate[]) {
-        // const marker = new google.maps.Marker({
-        //     position: new google.maps.LatLng(coordinate.lat, coordinate.lng),
-        //     title: "Hello World!"
-        // });
-        // marker.setMap(this.map);
-    }
-
-    addMarker(coordinate: Coordinate) {
-        const marker = new google.maps.Marker({
-            position: this.getGoogleCoordinateByCoordinate(coordinate),
-            title: "Hello World!"
+        const geocoder = new google.maps.Geocoder();
+        const countryName = "Israel";
+        geocoder.geocode({address: countryName}, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const countryBounds = results[0].geometry.viewport;
+                MapService.map.fitBounds(countryBounds);
+            } else {
+                console.error("Geocode was not successful for the following reason: " + status);
+            }
         });
-        marker.setMap(this.map);
+
+        // const demo: MapEvent = {
+        //     id: '9823',
+        //     description: 'אירוע נפילת רקטה',
+        //     type: MapEventTypeEnum.missile,
+        //     coordinate: new Coordinate(31.540895, 34.580934)
+        // };
+        // this.addEventMarker(demo);
+        // this.fitMap([
+        //     new Coordinate(31.540895, 34.580934),
+        //     new Coordinate(31.538774, 34.586770),
+        //     new Coordinate(31.538408, 34.604065),
+        //     new Coordinate(31.524103, 34.614838),
+        //     new Coordinate(31.512242, 34.602926),
+        //     new Coordinate(31.516273, 34.588195),
+        //     new Coordinate(31.528986, 34.579738)
+        // ])
+    }
+
+    addEventMarker(event: MapEvent) {
+        const marker = new Marker(event.id, new Coordinate(event.coordinate.lat, event.coordinate.lng), event.description)
+        marker.googleMarker.setMap(MapService.map);
     }
 
     fitMap(coordinates: Coordinate[]) {
         const bounds = new google.maps.LatLngBounds();
         coordinates.forEach(coordinate => {
-            bounds.extend(this.getGoogleCoordinateByCoordinate(coordinate));
+            bounds.extend(MapService.getGoogleCoordinateByCoordinate(coordinate));
         });
-        this.map.fitBounds(bounds);
+        MapService.map.fitBounds(bounds);
     }
 
-    getGoogleCoordinateByCoordinate(coordinate: Coordinate) {
+    static getGoogleCoordinateByCoordinate(coordinate: Coordinate) {
         return new google.maps.LatLng(coordinate.lat, coordinate.lng);
     }
 
