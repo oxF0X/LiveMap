@@ -28,7 +28,7 @@ export class MapsComponent implements OnInit, OnDestroy {
         const demo: MapEvent = {
             id: '9823',
             description: 'אירוע נפילת רקטה',
-            type: EventTypeEnum.missile,
+            type: EventTypeEnum.Shooting,
             coordinate: new Coordinate(31.540895, 34.580934)
         };
         this.mapService.addEventMarker(demo);

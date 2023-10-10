@@ -7,9 +7,14 @@ export class Marker {
     googleInfoWindow: any;
     googleMarker: any;
 
-    constructor(public id: string, public coordinate: Coordinate, public content?: string) {
+    constructor(public id: string, public coordinate: Coordinate, public type: EventTypeEnum, public content?: string) {
+        const url = type == EventTypeEnum.Shooting ? 'assets/img/shootingIcon.png' : 'assets/img/missleIcon.png';
         this.googleMarker = new google.maps.Marker({
             position: MapService.getGoogleCoordinateByCoordinate(this.coordinate),
+            icon: {
+                url: url, // Path to your local image file
+                scaledSize: new google.maps.Size(30, 30),
+            },
             // title: type of event
         });
         this.googleInfoWindow = new google.maps.InfoWindow({

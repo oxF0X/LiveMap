@@ -52,7 +52,7 @@ export class AppService {
                 const newEvents = true;
                 if (newEvents) {
                     this.showNotification('New events', 'danger');
-
+                    
                     // Update arrays
                     this._mapEvents.next(this.getMapEventsByGeneralEvents(events));
                     this._tableEvents.next(this.getTableEventsByGeneralEvents(events));

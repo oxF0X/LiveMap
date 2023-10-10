@@ -138,7 +138,7 @@ export class MapService {
     }
 
     addEventMarker(event: MapEvent) {
-        const marker = new Marker(event.id, new Coordinate(event.coordinate.lat, event.coordinate.lng), event.description)
+        const marker = new Marker(event.id, new Coordinate(event.coordinate.lat, event.coordinate.lng), event.type, event.description)
         marker.googleMarker.setMap(MapService.map);
     }
 
