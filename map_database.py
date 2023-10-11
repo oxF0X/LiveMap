@@ -28,10 +28,7 @@ class DBManager:
         self.cursor = self.mydb.cursor(buffered = True)
 
         self.mod = dataModule()
-
-        
-
-        
+       
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS mapdata (
             title VARCHAR(255) NOT NULL,
@@ -53,9 +50,6 @@ class DBManager:
         """
         self.cursor.execute("SELECT * FROM mapdata")
         return self.cursor.fetchall()
-
-
-    
 
     #insert JSON data
     def insert_json_data(self):
@@ -83,7 +77,7 @@ class DBManager:
 
     def delete_old_rows(self):
         
-        
+        self.cursor
         #query to delete rows older than x time
         delete_query_alarm = """
         DELETE FROM mapdata
@@ -102,27 +96,16 @@ class DBManager:
         #commit the changes
         self.mydb.commit()
         
-
-
-
-            
-
+    def __del__(self):
+        self.cursor.close()
+        self.mydb.close()
 
     #multithread the main functions, idk if it's necessary 
     def main_execute(self):
-        #self.delete_old_rows()
+        self.delete_old_rows()
         self.insert_json_data()
-        
-    #commit changes and close db
+        #commit changes
         self.mydb.commit()
-        self.mydb.close()
-    
-    
-    
-            
-            
-            
-    
 
 # Create an instance of DBManager
 db_manager_instance = DBManager()
@@ -130,9 +113,10 @@ db_manager_instance = DBManager()
 # Call the method to show table data
     
 schedule.every(1).minutes.do(db_manager_instance.main_execute) 
-  
+
 while True: 
     schedule.run_pending() 
-    time.sleep(1) 
+    time.sleep(1)
+
 
 
