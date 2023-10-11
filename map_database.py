@@ -12,6 +12,7 @@ from datetime import datetime
 import schedule 
 import time
 import threading
+from DataModule import dataModule
 
 
 class DBManager:
@@ -26,7 +27,7 @@ class DBManager:
 
         self.cursor = self.mydb.cursor(buffered = True)
 
-        
+        self.mod = dataModule()
 
         
         self.cursor.execute("""
@@ -56,14 +57,10 @@ class DBManager:
     
 
     #insert JSON data
-    def insert_json_data(self, file):
+    def insert_json_data(self):
         #change accordingly
-        json_directory = r"D:/jsontest/"
-        file_path = os.path.join(json_directory, file)
-        with open(file_path, "r") as f:
-            data = json.load(f)
         
-        
+        data = self.mod.Scraping()
         check_query = "SELECT title FROM mapdata WHERE title = %s"
         self.cursor.execute(check_query, (data["title"],))
         existing_id = self.cursor.fetchone()
@@ -72,8 +69,6 @@ class DBManager:
             insert_query = "INSERT INTO mapdata (title, content, type, addition, longtitude, latitude) VALUES (%s, %s, %s, %s, %s, %s)"
             
             self.cursor.execute(insert_query, (data["title"], data["content"], data["type"], data["addition"], data["longtitude"], data["latitude"]))
-        else:
-            os.remove(os.path.join(json_directory, file))
                 
         self.mydb.commit()
 
@@ -102,23 +97,15 @@ class DBManager:
 
 
 
-    #iterate through json files in directory
-    def iterator(self):
-        #change accordingly
-        json_directory = r"D:/jsontest/"
-        for filename in os.listdir(json_directory):
-            self.insert_json_data(filename)
             
-
 
 
     #multithread the main functions, idk if it's necessary 
     def main_execute(self):
-        
-        
+        print("I'm here")
         self.delete_old_rows()
-        self.iterator()
-
+        self.insert_json_data()
+        
     #commit changes and close db
         self.mydb.commit()
         self.mydb.close()
