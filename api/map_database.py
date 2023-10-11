@@ -63,7 +63,7 @@ class DBManager:
             existing_id = self.cursor.fetchone()
             if not existing_id:
                 try:
-                    self.cursor.execute(insert_query, (event["message"], event["type"], 0, event["place"][1], event["place"][0]))
+                    self.cursor.execute(insert_query, (event["message"], event["type"], event["time"], event["place"][1], event["place"][0]))
                     self.mydb.commit()
                 except mysql.connector.Error as err:
                     print(str(err))
@@ -76,7 +76,6 @@ class DBManager:
 
 
     def delete_old_rows(self):
-
         
         self.cursor
         #query to delete rows older than x time
@@ -109,21 +108,15 @@ class DBManager:
         self.mydb.commit()
 
 # Create an instance of DBManager
-#db_manager_instance = DBManager()
+db_manager_instance = DBManager()
 
 # Call the method to show table data
     
-#schedule.every(1).minutes.do(db_manager_instance.main_execute) 
+schedule.every(1).minutes.do(db_manager_instance.main_execute) 
 
-#while True:
-    """
-    3
-    Created on Mon Oct  9 18:53:11 2023
-    4
-    5
-    @author: ruste
-    6
-    """
-    #schedule.run_pending() 
-    #time.sleep(1)
+while True: 
+    schedule.run_pending() 
+    time.sleep(1)
+
+
 
