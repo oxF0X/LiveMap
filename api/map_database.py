@@ -22,7 +22,7 @@ class DBManager:
             host = "localhost",
             user = "root",
             passwd = "abudefduf1",
-            database = self.db
+            database = "mapdb"
         )    
 
         self.cursor = self.mydb.cursor(buffered = True)
@@ -52,10 +52,16 @@ class DBManager:
         results = self.cursor.fetchall()
         rows = []
         for row in results:
-            row_dict = dict(zip(cursor.column_names, row))
+            row_dict = {
+                "description": row[0],
+                "eventType": row[1],
+                "startTime": row[2],
+                "lang" : row[3],
+                "alt": row[4]
+            }
             rows.append(row_dict)
 
-        return json.dumps(rows, indent=4)
+        return json.dumps(rows)
 
     #insert JSON data
     def insert_json_data(self):
