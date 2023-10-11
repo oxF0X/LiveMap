@@ -110,7 +110,7 @@ class DBManager:
 
     #multithread the main functions, idk if it's necessary 
     def main_execute(self):
-        self.delete_old_rows()
+        #self.delete_old_rows()
         self.insert_json_data()
         
     #commit changes and close db
