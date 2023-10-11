@@ -30,12 +30,13 @@ class DBManager:
         self.mod = dataModule()
 
         
+
+        
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS mapdata (
             title VARCHAR(255) NOT NULL,
-            content TEXT,
             type VARCHAR(50) NOT NULL,
-            addition TIME,
+            time TIME,
             longtitude FLOAT,
             latitude FLOAT
             )""")
@@ -48,7 +49,7 @@ class DBManager:
     def select_rows(self):        
         delete_query = """
         DELETE FROM mapdata
-        WHERE addition < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
+        WHERE time < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
         """
         self.cursor.execute("SELECT * FROM mapdata")
         return self.cursor.fetchall()
@@ -59,17 +60,24 @@ class DBManager:
     #insert JSON data
     def insert_json_data(self):
         #change accordingly
-        
         data = self.mod.Scraping()
-        check_query = "SELECT title FROM mapdata WHERE title = %s"
-        self.cursor.execute(check_query, (data["title"],))
-        existing_id = self.cursor.fetchone()
-        if not existing_id:
-            #query to insert data into the table
-            insert_query = "INSERT INTO mapdata (title, content, type, addition, longtitude, latitude) VALUES (%s, %s, %s, %s, %s, %s)"
-            
-            self.cursor.execute(insert_query, (data["title"], data["content"], data["type"], data["addition"], data["longtitude"], data["latitude"]))
+        #query to insert data into the table
+        insert_query = "INSERT INTO mapdata (title, type, time, longtitude, latitude) VALUES (%s, %s, %s, %s, %s)"
+        for event in data:
+            check_query = "SELECT title FROM mapdata WHERE title = %s"
+            self.cursor.execute(check_query, (event["message"],))
+            existing_id = self.cursor.fetchone()
+            if not existing_id:
+                try:
+                    self.cursor.execute(insert_query, (event["message"], event["type"], event["time"], event["place"][1], event["place"][0]))
+                    self.mydb.commit()
+                except mysql.connector.Error as err:
+                    print(str(err))
+            else:
+                print("data exists")
                 
+            print(self.cursor.execute("SHOW COLUMNS FROM mapdata"))
+            
         self.mydb.commit()
 
 
@@ -79,12 +87,12 @@ class DBManager:
         #query to delete rows older than x time
         delete_query_alarm = """
         DELETE FROM mapdata
-        WHERE addition < (CURDATE() - INTERVAL %s MINUTE) AND type = %s
+        WHERE time < (CURDATE() - INTERVAL %s MINUTE) AND type = %s
         """
         
         delete_query_else = """
         DELETE FROM mapdata
-        WHERE addition < (CURDATE() - INTERVAL %s HOUR) AND type = %s
+        WHERE time < (CURDATE() - INTERVAL %s HOUR) AND type = %s
         """
         
         #execute cursor with changes, will add types once syntax is known
@@ -102,7 +110,6 @@ class DBManager:
 
     #multithread the main functions, idk if it's necessary 
     def main_execute(self):
-        print("I'm here")
         self.delete_old_rows()
         self.insert_json_data()
         
@@ -122,9 +129,7 @@ db_manager_instance = DBManager()
 
 # Call the method to show table data
     
-DBManager.main_execute(db_manager_instance)
-
-schedule.every(1).minutes.do(DBManager.main_execute) 
+schedule.every(1).minutes.do(db_manager_instance.main_execute) 
   
 while True: 
     schedule.run_pending() 
