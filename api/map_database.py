@@ -112,7 +112,3 @@ class DBManager:
         self.insert_json_data()
         #commit changes
         self.mydb.commit()
-
-
-
-
