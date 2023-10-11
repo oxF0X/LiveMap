@@ -12,6 +12,7 @@ from datetime import datetime
 import schedule 
 import time
 import threading
+from DataModule import dataModule
 
 
 class DBManager:
@@ -24,101 +25,105 @@ class DBManager:
             database = self.db
         )    
 
-        self.cursor = self.mydb.cursor()
+        self.cursor = self.mydb.cursor(buffered = True)
+
+        self.mod = dataModule()
+       
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mapdata (
+            title VARCHAR(255) NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            time TIME,
+            longtitude FLOAT,
+            latitude FLOAT
+            )""")
 
         self.cursor.execute(f"""
         SELECT COUNT(*) FROM information_schema.tables
         WHERE table_name = 'mapdata'""")
 
-        result = self.cursor.fetchone()
-        if not result:
-            self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS mapdata (
-            id INTEGER,
-            title VARCHAR(255) NOT NULL,
-            content TEXT,
-            type VARCHAR(50) NOT NULL,
-            addition DATE
-            )""")
-
 
     def select_rows(self):        
         delete_query = """
         DELETE FROM mapdata
-        WHERE DATEDIFF(minute, current_time, addition) > %s AND type = %s
+        WHERE time < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
         """
         self.cursor.execute("SELECT * FROM mapdata")
         return self.cursor.fetchall()
 
-
-
-    #will change when needed
-
-
     #insert JSON data
-    def insert_json_data(self, file):
-        json_directory = "/path/to/json"
-
-        with open(os.path.join(json_directory, file), "r") as f:
-            data = json.load(f)
-        
-        check_query = "SELECT id FROM mapdata WHERE id = %s"
-        self.cursor.execute(check_query, (data["id"],))
-        existing_id = self.cursor.fetchone()
-        if not existing_id:
-            #query to insert data into the table
-            insert_query = "INSERT INTO mapdata (id, title, content, type, addition) VALUES (%s, %s, %s, %s, %s)"
-            self.cursor.execute(insert_query, (data["id"], data["title"], data["content"], data["type"], data["addition"] ))
-            
-        else:
-            os.remove(os.path.join(json_directory, file))
+    def insert_json_data(self):
+        #change accordingly
+        data = self.mod.Scraping()
+        #query to insert data into the table
+        insert_query = "INSERT INTO mapdata (title, type, time, longtitude, latitude) VALUES (%s, %s, %s, %s, %s)"
+        for event in data:
+            check_query = "SELECT title FROM mapdata WHERE title = %s"
+            self.cursor.execute(check_query, (event["message"],))
+            existing_id = self.cursor.fetchone()
+            if not existing_id:
+                try:
+                    self.cursor.execute(insert_query, (event["message"], event["type"], 0, event["place"][1], event["place"][0]))
+                    self.mydb.commit()
+                except mysql.connector.Error as err:
+                    print(str(err))
+            else:
+                print("data exists")
                 
+            print(self.cursor.execute("SHOW COLUMNS FROM mapdata"))
+            
         self.mydb.commit()
 
 
     def delete_old_rows(self):
-        current_time = datetime.now()
+
         
-        #query to delete rows older than 15 minutes
-        delete_query = """
+        self.cursor
+        #query to delete rows older than x time
+        delete_query_alarm = """
         DELETE FROM mapdata
-        WHERE addition < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
+        WHERE time < (CURDATE() - INTERVAL %s MINUTE) AND type = %s
+        """
+        
+        delete_query_else = """
+        DELETE FROM mapdata
+        WHERE time < (CURDATE() - INTERVAL %s HOUR) AND type = %s
         """
         
         #execute cursor with changes, will add types once syntax is known
-        self.cursor.execute(delete_query, ("15 MINUTE", "ALARMS"))
-        self.cursor.execute(delete_query, ("5 HOUR", "ROAD_BLOCKED"))
-        self.cursor.execute(delete_query, ("5 HOUR", "DANGER"))
+        self.cursor.execute(delete_query_alarm, (15, 'ALARMS'))
+        self.cursor.execute(delete_query_else, (5, "ROAD_BLOCKED"))
+        self.cursor.execute(delete_query_else, (5, "DANGER"))
         #commit the changes
         self.mydb.commit()
         
-
-
-
-    #iterate through json files in directory
-    def iterator(self):
-        for filename in os.listdir(json_directory):
-            with open(os.path.join(json_directory, filename), "r") as file:        
-                insert_json_data(file)
-
-
+    def __del__(self):
+        self.cursor.close()
+        self.mydb.close()
 
     #multithread the main functions, idk if it's necessary 
     def main_execute(self):
-        
-        t1 = threading.Thread(target = iterator)
-        t2 = threading.Thread(target = delete_old_rows)
-        
-        t1.start() 
-        t2.start() 
+        self.delete_old_rows()
+        self.insert_json_data()
+        #commit changes
+        self.mydb.commit()
 
-        #wait until threads finish their job 
-        t1.join() 
-        t2.join() 
+# Create an instance of DBManager
+#db_manager_instance = DBManager()
 
+# Call the method to show table data
+    
+#schedule.every(1).minutes.do(db_manager_instance.main_execute) 
 
-
-    #commit changes and close db
-    self.mydb.commit()
-    self.mydb.close()
+#while True:
+    """
+    3
+    Created on Mon Oct  9 18:53:11 2023
+    4
+    5
+    @author: ruste
+    6
+    """
+    #schedule.run_pending() 
+    #time.sleep(1)
 
