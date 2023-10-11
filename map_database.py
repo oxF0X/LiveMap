@@ -106,24 +106,3 @@ class DBManager:
         self.insert_json_data()
         #commit changes
         self.mydb.commit()
-
-# Create an instance of DBManager
-db_manager_instance = DBManager()
-
-# Call the method to show table data
-    
-schedule.every(1).minutes.do(db_manager_instance.main_execute) 
-
-while True: """
-3
-Created on Mon Oct  9 18:53:11 2023
-4
-​
-5
-@author: ruste
-6
-"""
-    schedule.run_pending() 
-    time.sleep(1)
-
-
