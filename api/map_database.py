@@ -49,7 +49,13 @@ class DBManager:
         WHERE time < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
         """
         self.cursor.execute("SELECT * FROM mapdata")
-        return self.cursor.fetchall()
+        results = self.cursor.fetchall()
+        rows = []
+        for row in results:
+            row_dict = dict(zip(cursor.column_names, row))
+            rows.append(row_dict)
+
+        return json.dumps(rows, indent=4)
 
     #insert JSON data
     def insert_json_data(self):
@@ -107,16 +113,6 @@ class DBManager:
         #commit changes
         self.mydb.commit()
 
-# Create an instance of DBManager
-db_manager_instance = DBManager()
-
-# Call the method to show table data
-    
-schedule.every(1).minutes.do(db_manager_instance.main_execute) 
-
-while True: 
-    schedule.run_pending() 
-    time.sleep(1)
 
 
 
