@@ -12,7 +12,7 @@ from datetime import datetime
 import schedule 
 import time
 import threading
-from DataModule import dataModule
+#from DataModule import dataModule
 
 
 class DBManager:
@@ -27,7 +27,7 @@ class DBManager:
 
         self.cursor = self.mydb.cursor(buffered = True)
 
-        self.mod = dataModule()
+        #self.mod = dataModule()
        
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS mapdata (
@@ -55,7 +55,7 @@ class DBManager:
             row_dict = {
                 "description": row[0],
                 "eventType": row[1],
-                "startTime": row[2],
+                "startTime": str(row[2]),
                 "lang" : row[3],
                 "alt": row[4]
             }
@@ -66,7 +66,7 @@ class DBManager:
     #insert JSON data
     def insert_json_data(self):
         #change accordingly
-        data = self.mod.Scraping()
+        #data = self.mod.Scraping()
         #query to insert data into the table
         insert_query = "INSERT INTO mapdata (title, type, time, longtitude, latitude) VALUES (%s, %s, %s, %s, %s)"
         for event in data:
