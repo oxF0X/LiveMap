@@ -7,15 +7,14 @@ export class Marker {
     googleInfoWindow: any;
     googleMarker: any;
 
-    constructor(public id: string, public coordinate: Coordinate, public type: EventTypeEnum, public content?: string) {
-        const url = type == EventTypeEnum.Shooting ? 'assets/img/shootingIcon.png' : 'assets/img/missleIcon.png';
+    constructor(public id: string | number, public coordinate: Coordinate, public type: EventTypeEnum, public content?: string, iconUrl?: string) {
         this.googleMarker = new google.maps.Marker({
             position: MapService.getGoogleCoordinateByCoordinate(this.coordinate),
             icon: {
-                url: url, // Path to your local image file
+                url: iconUrl, // Path to your local image file
                 scaledSize: new google.maps.Size(30, 30),
             },
-            // title: type of event
+            title: type
         });
         this.googleInfoWindow = new google.maps.InfoWindow({
             content: this.content
@@ -33,8 +32,9 @@ export class Coordinate {
 }
 
 export enum EventTypeEnum {
-    missile,
-    Shooting
+    DANGER = 'DANGER',
+    ALARMS = 'ALARMS',
+    ROAD_BLOCKED = 'ROAD_BLOCKED'
 }
 
 export enum GeneralEventTypeEnum {
@@ -43,24 +43,12 @@ export enum GeneralEventTypeEnum {
 }
 
 export interface GeneralEvent {
-    id: string;
-    content: string;
+    id: string | number;
+    description: string;
     title?: string;
-    newsType: GeneralEventTypeEnum;
-    eventType: EventTypeEnum
-    additionDate: string;
+    newsType?: GeneralEventTypeEnum;
+    type: EventTypeEnum
+    startTime: string;
     coordinate: Coordinate;
-}
-
-export interface MapEvent {
-    id: string;
-    description: string;
-    type: EventTypeEnum;
-    coordinate: Coordinate;
-}
-
-export interface TableEvent {
-    id: string;
-    description: string;
-    type: EventTypeEnum;
+    imageUrl: string;
 }

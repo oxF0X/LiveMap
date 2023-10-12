@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {Observable, of, switchMap, map, catchError} from 'rxjs';
-import {Coordinate, MapEvent, EventTypeEnum, Marker} from '../data/types';
+import {Coordinate, GeneralEvent, Marker} from '../data/types';
 
 declare const google: any;
 
@@ -100,7 +99,8 @@ export class MapService {
         }]
 
     };
-    mapEvents: MapEvent[];
+    events: GeneralEvent[];
+    googleEventMarkers: any[] = [];
 
     constructor(private _httpClient: HttpClient) {
     }
@@ -137,9 +137,17 @@ export class MapService {
         // ])
     }
 
-    addEventMarker(event: MapEvent) {
-        const marker = new Marker(event.id, new Coordinate(event.coordinate.lat, event.coordinate.lng), event.type, event.description)
+    addEventMarker(event: GeneralEvent) {
+        const marker = new Marker(event.id, new Coordinate(event.coordinate.lat, event.coordinate.lng), event.type, event.startTime + ' | ' + event.description, event.imageUrl)
         marker.googleMarker.setMap(MapService.map);
+        this.googleEventMarkers.push(marker.googleMarker);
+    }
+
+    removeAllGoogleEventMarkers(): void {
+        this.googleEventMarkers.forEach((googleEventMarker: any) => {
+            googleEventMarker?.setMap(null);
+        });
+        this.googleEventMarkers = [];
     }
 
     fitMap(coordinates: Coordinate[]) {

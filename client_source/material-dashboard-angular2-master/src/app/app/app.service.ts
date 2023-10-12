@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
-import {Observable, of, switchMap, map, catchError, BehaviorSubject, tap, throwError} from 'rxjs';
-import {GeneralEvent, MapEvent, TableEvent} from '../data/types';
+import {Observable, catchError, BehaviorSubject, tap, throwError} from 'rxjs';
+import {GeneralEvent} from '../data/types';
 import {HttpService} from '../http/http.service';
 import {DOCUMENT} from '@angular/common';
 
@@ -12,19 +12,11 @@ declare var $: any;
 })
 export class AppService {
     static isRtl: boolean;
-    generalEvents: GeneralEvent[];
-    tableEvents: TableEvent[];
-    mapEvents: MapEvent[];
 
-    private _tableEvents: BehaviorSubject<TableEvent[] | null> = new BehaviorSubject(null);
-    private _mapEvents: BehaviorSubject<MapEvent[] | null> = new BehaviorSubject(null);
+    private _events: BehaviorSubject<GeneralEvent[] | null> = new BehaviorSubject(null);
 
-    get tableEvents$(): Observable<TableEvent[]> {
-        return this._tableEvents.asObservable();
-    }
-
-    get mapEvents$(): Observable<MapEvent[]> {
-        return this._mapEvents.asObservable();
+    get events$(): Observable<GeneralEvent[]> {
+        return this._events.asObservable();
     }
 
     constructor(@Inject(DOCUMENT) private document: Document,
@@ -33,37 +25,69 @@ export class AppService {
     }
 
     initApp() {
+        this.setAppLanguage(true); ///
+        this.getEvents(true);
+        setInterval(() => this.getEvents(), 500);
+    }
 
-        this.showNotification('New events', 'danger');
-
+    getEvents(isFirstTime: boolean = false) {
         this.httpService.getAllEvents().pipe(
             tap((events: GeneralEvent[]) => {
-                this._mapEvents.next(this.getMapEventsByGeneralEvents(events));
-                this._tableEvents.next(this.getTableEventsByGeneralEvents(events));
-            }),
-            catchError((error: HttpErrorResponse) => {
-                return throwError(() => error);
-            })
-        ).subscribe();
-
-        // Set timeout for updating events
-        this.httpService.updateEvents().pipe(
-            tap((events: GeneralEvent[]) => {
-                const newEvents = true;
-                if (newEvents) {
-                    this.showNotification('New events', 'danger');
-                    
-                    // Update arrays
-                    this._mapEvents.next(this.getMapEventsByGeneralEvents(events));
-                    this._tableEvents.next(this.getTableEventsByGeneralEvents(events));
+                if (isFirstTime) {
+                    this._events.next(events);
+                } else if (!isFirstTime) {
+                    const {added, removed} = this.compareArraysByObjectId(this._events.value != null ? this._events.value : [], events);
+                    if (this.checkForNewEvents({added, removed})) {
+                        let content = '';
+                        added.forEach((i: GeneralEvent, index) => {
+                            content += i.startTime + ' | ' + i.description;
+                            if (index != added.length - 1) {
+                                content += '<br>';
+                            }
+                        });
+                        this.showNotification(content, 'danger');
+                        // Update array
+                        this._events.next(events);
+                    }
                 }
             }),
             catchError((error: HttpErrorResponse) => {
                 return throwError(() => error);
             })
         ).subscribe();
+    }
 
-        this.setAppLanguage(true); ///
+    checkForNewEvents({added, removed}): boolean {
+        if (added.length != 0 || removed.length != 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    compareArraysByObjectId(arr1, arr2) {
+        const removed = [];
+        const added = [];
+
+        // Check for removed objects
+        for (const obj1 of arr1) {
+            if (!arr2.some(obj2 => obj2.id === obj1.id)) {
+                removed.push(obj1);
+            }
+        }
+
+        // Check for added objects
+        for (const obj2 of arr2) {
+            if (!arr1.some(obj1 => obj1.id === obj2.id)) {
+                added.push(obj2);
+            }
+        }
+
+        // added.push(
+        //     {"id":"1501&DANGER","description":"אירוע מסוים ","type":"DANGER","coordinate":{"lat":31.7683,"lng":35.2137,"ord":null},"startTime":"16:50:35","imageUrl":"assets/img/warning.png"}
+        // )
+
+        return {added, removed};
     }
 
     setAppLanguage(isRtl): void {///
@@ -77,16 +101,6 @@ export class AppService {
             html.lang = 'en';
         }
         AppService.isRtl = isRtl;
-    }
-
-    getMapEventsByGeneralEvents(events: GeneralEvent[]): MapEvent[] { ///
-        const mapEvents = [];
-        return mapEvents;
-    }
-
-    getTableEventsByGeneralEvents(events: GeneralEvent[]): TableEvent[] { ///
-        const tableEvents = [];
-        return tableEvents;
     }
 
     showNotification(message: string, type: string, from = 'top', align = 'center') {

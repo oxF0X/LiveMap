@@ -1,9 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {catchError, map, tap, throwError} from 'rxjs';
-import {GeneralEvent, MapEvent} from './data/types';
-import {HttpErrorResponse} from '@angular/common/http';
 import {MapService} from './maps/map.service';
-import {HttpService} from './http/http.service';
 import {AppService} from './app/app.service';
 
 

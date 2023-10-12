@@ -1,12 +1,8 @@
 import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {MapService} from './map.service';
-import {HttpService} from '../http/http.service';
-import {catchError, map, Observable, Subject, takeUntil, tap, throwError} from 'rxjs';
-import {HttpErrorResponse} from '@angular/common/http';
-import {Coordinate, MapEvent, EventTypeEnum} from '../data/types';
+import {Subject, takeUntil} from 'rxjs';
+import {GeneralEvent} from '../data/types';
 import {AppService} from '../app/app.service';
-
-declare const google: any;
 
 @Component({
     selector: 'app-maps',
@@ -15,7 +11,7 @@ declare const google: any;
 })
 export class MapsComponent implements OnInit, OnDestroy {
     private _unsubscribeAll: Subject<any> = new Subject<any>();
-    mapEvents: MapEvent[];
+    events: GeneralEvent[];
 
     constructor(private mapService: MapService,
                 private _changeDetectorRef: ChangeDetectorRef,
@@ -24,25 +20,26 @@ export class MapsComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.mapService.initMap();
-        ///
-        const demo: MapEvent = {
-            id: '9823',
-            description: 'אירוע נפילת רקטה',
-            type: EventTypeEnum.Shooting,
-            coordinate: new Coordinate(31.540895, 34.580934)
-        };
-        this.mapService.addEventMarker(demo);
-        ///
-        this.appService.mapEvents$
+        // ///
+        // const demo: MapEvent = {
+        //     id: '9823',
+        //     description: 'אירוע נפילת רקטה',
+        //     type: EventTypeEnum.Shooting,
+        //     // coordinate: new Coordinate(31.540895, 34.580934)
+        //     coordinate: new Coordinate(33.164, 35.6314)
+        // };
+        // this.mapService.addEventMarker(demo);
+        // ///
+        this.appService.events$
             .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((mapEvents: MapEvent[]) => {
-                this.mapEvents = mapEvents;
-                // Todo: Check for multiplication
-                this.mapEvents?.forEach((event: MapEvent) => {
+            .subscribe((events: GeneralEvent[]) => {
+                this.events = events;
+                this.mapService.removeAllGoogleEventMarkers();
+                this.events?.forEach((event: GeneralEvent) => {
+                    this.mapService.addEventMarker(event);
                 });
                 this._changeDetectorRef.markForCheck();
             });
-
     }
 
     ngOnDestroy(): void {

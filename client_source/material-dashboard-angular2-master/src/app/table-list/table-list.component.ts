@@ -2,7 +2,7 @@ import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {Observable, Subject, takeUntil, tap} from 'rxjs';
 import {HttpService} from '../http/http.service';
 import {AppService} from '../app/app.service';
-import {MapEvent, TableEvent} from '../data/types';
+import {GeneralEvent} from '../data/types';
 
 @Component({
     selector: 'app-table-list',
@@ -11,18 +11,22 @@ import {MapEvent, TableEvent} from '../data/types';
 })
 export class TableListComponent implements OnInit, OnDestroy {
     private _unsubscribeAll: Subject<any> = new Subject<any>();
-    tableEvents: TableEvent[];
+    events: GeneralEvent[];
+    firstLoading: boolean;
 
     constructor(private appService: AppService,
                 private _changeDetectorRef: ChangeDetectorRef) {
     }
 
     ngOnInit() {
-        this.appService.tableEvents$
+        this.firstLoading = true;
+        this.appService.events$
             .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((tableEvents: TableEvent[]) => {
-                this.tableEvents = tableEvents;
-                // Todo: Check for multiplication
+            .subscribe((events: GeneralEvent[]) => {
+                if (this.firstLoading) {
+                    this.firstLoading = false;
+                }
+                this.events = events;
                 this._changeDetectorRef.markForCheck();
             });
     }
