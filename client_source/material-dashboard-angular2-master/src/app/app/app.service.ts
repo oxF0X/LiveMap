@@ -38,6 +38,8 @@ export class AppService {
                 } else if (!isFirstTime) {
                     const {added, removed} = this.compareArraysByObjectId(this._events.value != null ? this._events.value : [], events);
                     if (this.checkForNewEvents({added, removed})) {
+                        // Update array
+                        this._events.next(events);
                         let content = '';
                         added.forEach((i: GeneralEvent, index) => {
                             content += i.startTime + ' | ' + i.description;
@@ -46,8 +48,6 @@ export class AppService {
                             }
                         });
                         this.showNotification(content, 'danger');
-                        // Update array
-                        this._events.next(events);
                     }
                 }
             }),

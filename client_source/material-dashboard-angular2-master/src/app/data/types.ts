@@ -14,7 +14,7 @@ export class Marker {
                 url: iconUrl, // Path to your local image file
                 scaledSize: new google.maps.Size(30, 30),
             },
-            title: type
+            // title: type
         });
         this.googleInfoWindow = new google.maps.InfoWindow({
             content: this.content
