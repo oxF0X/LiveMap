@@ -7,7 +7,7 @@ import {Coordinate, EventTypeEnum, GeneralEvent} from '../data/types';
     providedIn: 'root'
 })
 export class HttpService {
-    private apiBasePath: string = 'http://ec2-51-16-26-124.il-central-1.compute.amazonaws.com/';
+    private apiBasePath: string = 'https://ec2-51-16-26-124.il-central-1.compute.amazonaws.com/';
 
     constructor(private _httpClient: HttpClient) {
     }
