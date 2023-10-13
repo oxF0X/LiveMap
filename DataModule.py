@@ -1,8 +1,12 @@
 from bs4 import BeautifulSoup
-import requests
 from deep_translator import GoogleTranslator
 from spacy_poc import dataExtractor
 import googlemaps
+import requests
+import re
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class dataModule:
@@ -10,6 +14,9 @@ class dataModule:
         self.translate_en = GoogleTranslator(source='auto', target='en')
         self.translate_he = GoogleTranslator(source='auto', target='iw')
         self.dex = dataExtractor()
+        op = webdriver.ChromeOptions()
+        op.add_argument('headless')
+        self.driver = webdriver.Chrome(options=op)
         self.gmaps = googlemaps.Client(
             key='AIzaSyDhCenCnlhAr2oth9wQFOrUBAOFZ9j63V4')
 
@@ -22,91 +29,46 @@ class dataModule:
         except:
             return (0, 0)
 
+    def get_times(self, url):
+        self.driver.get(url)
+        pattern = r'\d{2}:\d{2}'
+        source = (self.driver.page_source)
+        text_content = BeautifulSoup(source, 'html.parser').get_text()
+        matches = re.findall(pattern, text_content)
+        return matches
+
     def Scraping(self):
-        data = {}
-        hebrew_alphabet = [
-            'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ך', 'ל', 'מ',
-            'ם', 'נ', 'ן', 'ס', 'ע', 'פ', 'ף', 'צ', 'ץ', 'ק', 'ר', 'ש', 'ת'
-        ]
-
-        symbols = [
-            ' ', '!', '#', '$' "'", '(', ')', ',', '.',
-            ':', '[', ']', '^', '`', '{', '|', '}', '~', '׳', '־', '׀', 'ׁ', 'ׂ', '׃', '׆', 'ׇ'
-        ]
+        events = []
         url = "https://hamal.co.il/main"
-
         try:
             response = requests.get(url)
 
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-
-                # print(soup.prettify())
             else:
                 print(
                     f"Failed to retrieve the webpage. Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {str(e)}")
 
-        articlesSoup = soup.find_all(attrs={'class': 'styles_article__Mwzjl'})
-        articles = []
-        linkComponents = []
-        for article in articlesSoup:
-            linkComponent = article.find(
-                attrs={'class': 'styles_bodyContainer__w4Y99'})
-            linkComponents.append(linkComponent)
-
-        links = []
-
-        for link in linkComponents:
-            actualLinkComponent = link.find('a')
-            linkString = str(actualLinkComponent)
-            linkString = linkString[9:-6]
-            links.append(linkString)
-
-        for link in links:
-            url = f"https://hamal.co.il{link}"
-
-            try:
-                response = requests.get(url)
-
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-
-                    # print(soup.prettify())
-                else:
-                    print(
-                        f"Failed to retrieve the webpage. Status code: {response.status_code}")
-            except requests.exceptions.RequestException as e:
-                print(f"An error occurred: {str(e)}")
-
-            title = str(soup.find(attrs={"class": "styles_title__QOrfi"}))
-            content = str(
-                soup.find(attrs={"class": "styles_action__8YDU4 styles_mail__6E83G"}))
-            parsedTitle = ""
-            if len(title) != 0:
-                for letter in title:
-                    if (letter in hebrew_alphabet or letter in symbols):
-                        parsedTitle += letter
-
-            parsedContent = ""
-            for letter in content:
-                if (letter in hebrew_alphabet or letter in symbols):
-                    parsedContent += letter
-            data[parsedTitle] = parsedContent
-        events = []
-        for key in data.keys():
+        headers = soup.find_all(attrs={'class': 'styles_title__Tr6kY'})
+        for header in headers:
+            events.append(header.text)
+        times = self.get_times(url)
+        i = 0
+        exEvents = []
+        for e in events:
             tmp = self.dex.classify_message(
-                self.translate_en.translate(key))
+                self.translate_en.translate(e))
             if tmp["type"] != None and tmp["place"] != '':
-                print(tmp)
                 tmp["place"] = self.getGeoCode(tmp['place'][::-1])
-                events.append(tmp)
-        print(events)
-        return events
+                tmp["time"] = times[i]
+                exEvents.append(tmp)
+            i = i+1
+        return exEvents
 
 
 dm = dataModule()
 dm.Scraping()
-# for event in dm.Scraping():
-#    print(event)
+for event in dm.Scraping():
+    print(event)
