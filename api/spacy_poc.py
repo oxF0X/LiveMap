@@ -59,3 +59,4 @@ class dataExtractor:
             "type": type
         }
         return classification
+

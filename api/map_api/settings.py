@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-k)r1ti**a*q_923(o3p6lw=4sin**i6^t7g&!i=5-cmkr=j3^#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'ec2-51-16-26-124.il-central-1.compute.amazonaws.com',
+    '51.16.26.124',
+    'd3tatb0a3hgqlp.cloudfront.net'
+]
 
 
 # Application definition
@@ -38,6 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'map_database',
+    "corsheaders",
+    "django_extensions",
+    "sslserver",
 ]
 
 MIDDLEWARE = [
@@ -48,7 +55,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+    "http://localhost:4208",
+    "https://d3tatb0a3hgqlp.cloudfront.net",]
 
 ROOT_URLCONF = 'map_api.urls'
 
@@ -122,3 +136,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

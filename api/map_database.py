@@ -13,22 +13,29 @@ import schedule
 import time
 import threading
 from DataModule import dataModule
+from datetime import datetime
+
+
+MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+MYSQL_PASS = os.environ.get('MYSQL_PASS')
+MYSQL_DATABASE = os.environ.get('MYSQL_DATABASE', 'mapdb')
 
 
 class DBManager:
     def __init__(self):
-        self.db = "mapdb"    
+        self.db = MYSQL_DATABASE    
         self.mydb = mysql.connector.connect(
-            host = "localhost",
-            user = "root",
-            passwd = "abudefduf1",
-            database = "mapdb"
+            host = MYSQL_HOST,
+            user = MYSQL_USER,
+            passwd = MYSQL_PASS,
+            database = MYSQL_DATABASE,
         )    
-
+        #print(self.mydb)
         self.cursor = self.mydb.cursor(buffered = True)
 
-        self.mod = dataModule()
-       
+        #self.mod = dataModule()
+        self.mod = None
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS mapdata (
             title VARCHAR(255) NOT NULL,
@@ -41,41 +48,59 @@ class DBManager:
         self.cursor.execute(f"""
         SELECT COUNT(*) FROM information_schema.tables
         WHERE table_name = 'mapdata'""")
+        self.close()
+    
+    def open(self):
+        self.db = MYSQL_DATABASE
+        self.mydb = mysql.connector.connect(
+            host = MYSQL_HOST,
+            user = MYSQL_USER,
+            passwd = MYSQL_PASS,
+            database = MYSQL_DATABASE,
+        )
+        #print(self.mydb)
+        self.cursor = self.mydb.cursor(buffered = True)
 
 
-    def select_rows(self):        
-        delete_query = """
-        DELETE FROM mapdata
-        WHERE time < DATE_SUB(NOW(), INTERVAL %s) AND type = %s
-        """
-        self.cursor.execute("SELECT * FROM mapdata")
+    def select_rows(self):      
+        self.open()
+        self.cursor.execute("SELECT * FROM mapdata;")
         results = self.cursor.fetchall()
+        self.close()
         rows = []
         for row in results:
             row_dict = {
                 "description": row[0],
                 "eventType": row[1],
-                "startTime": row[2],
+                "startTime": str(row[2]),
                 "lang" : row[3],
                 "alt": row[4]
             }
             rows.append(row_dict)
-
+    
         return json.dumps(rows)
 
     #insert JSON data
     def insert_json_data(self):
+        print("yay") 
+        self.open()
+        if self.mod == None:
+            self.mod = dataModule()
         #change accordingly
         data = self.mod.Scraping()
         #query to insert data into the table
         insert_query = "INSERT INTO mapdata (title, type, time, longtitude, latitude) VALUES (%s, %s, %s, %s, %s)"
         for event in data:
-            check_query = "SELECT title FROM mapdata WHERE title = %s"
-            self.cursor.execute(check_query, (event["message"],))
+            print(event)
+            check_query = "SELECT title FROM mapdata WHERE title = %s and type = %s"# and longtitude = %s and latitude = %s"
+            self.cursor.execute(check_query, (event["message"][::-1], event["type"]))#)), event["place"][1], event["place"][0]))
             existing_id = self.cursor.fetchone()
-            if not existing_id:
+            #print("reverse", event["message"][::-1])
+            if existing_id == None:
                 try:
-                    self.cursor.execute(insert_query, (event["message"], event["type"], event["time"], event["place"][1], event["place"][0]))
+                    now = datetime.now()
+                    formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+                    self.cursor.execute(insert_query, (event["message"][::-1], event["type"], event["time"]+ ":00", event["place"][1], event["place"][0]))
                     self.mydb.commit()
                 except mysql.connector.Error as err:
                     print(str(err))
@@ -85,29 +110,24 @@ class DBManager:
             print(self.cursor.execute("SHOW COLUMNS FROM mapdata"))
             
         self.mydb.commit()
-
+        self.close()
 
     def delete_old_rows(self):
         
-        self.cursor
-        #query to delete rows older than x time
-        delete_query_alarm = """
-        DELETE FROM mapdata
-        WHERE time < (CURDATE() - INTERVAL %s MINUTE) AND type = %s
-        """
-        
-        delete_query_else = """
-        DELETE FROM mapdata
-        WHERE time < (CURDATE() - INTERVAL %s HOUR) AND type = %s
-        """
+        self.open()
+        #query to delete rows older than x time       
         
         #execute cursor with changes, will add types once syntax is known
-        self.cursor.execute(delete_query_alarm, (15, 'ALARMS'))
-        self.cursor.execute(delete_query_else, (5, "ROAD_BLOCKED"))
-        self.cursor.execute(delete_query_else, (5, "DANGER"))
-        #commit the changes
+        self.cursor.execute("delete from mapdata WHERE TIMESTAMP(time) <= NOW() - INTERVAL 15 MINUTE and type = 'ALARMS';")
+        self.cursor.execute("delete from mapdata WHERE TIMESTAMP(time) <= ABS(NOW() - INTERVAL 120 MINUTE);")
         self.mydb.commit()
+        self.close()
         
+
+    def close(self):
+        self.cursor.close()
+        self.mydb.close()
+
     def __del__(self):
         self.cursor.close()
         self.mydb.close()
