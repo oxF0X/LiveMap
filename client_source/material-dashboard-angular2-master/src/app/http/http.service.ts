@@ -7,7 +7,7 @@ import {Coordinate, EventTypeEnum, GeneralEvent} from '../data/types';
     providedIn: 'root'
 })
 export class HttpService {
-    private apiBasePath: string = 'https://d3tatb0a3hgqlp.cloudfront.net/api/';
+    private apiBasePath: string = 'https://map.unitytechisrael.org/api/';
 
     constructor(private _httpClient: HttpClient) {
     }

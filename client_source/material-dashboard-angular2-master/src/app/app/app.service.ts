@@ -12,7 +12,7 @@ declare var $: any;
 })
 export class AppService {
     static isRtl: boolean;
-
+    isLast = true;
     private _events: BehaviorSubject<GeneralEvent[] | null> = new BehaviorSubject(null);
 
     get events$(): Observable<GeneralEvent[]> {
@@ -27,10 +27,12 @@ export class AppService {
     initApp() {
         this.setAppLanguage(true); ///
         this.getEvents(true);
-        setInterval(() => this.getEvents(), 500);
+        if(this.isLast)
+            setInterval(() => this.getEvents(), 500);
     }
 
     getEvents(isFirstTime: boolean = false) {
+        this.isLast = false
         this.httpService.getAllEvents().pipe(
             tap((events: GeneralEvent[]) => {
                 if (isFirstTime) {
@@ -50,11 +52,15 @@ export class AppService {
                         this.showNotification(content, 'danger');
                     }
                 }
+
             }),
             catchError((error: HttpErrorResponse) => {
+                this.isLast = true
                 return throwError(() => error);
             })
         ).subscribe();
+        this.isLast = true
+
     }
 
     checkForNewEvents({added, removed}): boolean {
